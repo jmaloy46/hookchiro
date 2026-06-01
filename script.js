@@ -32,20 +32,26 @@ document.addEventListener('DOMContentLoaded', () => {
     vertButtons.push(btn);
   });
 
-  /* ---- active section tracking (spine glow) ---- */
-  const byVisibility = new Map();
-  const secObserver = new IntersectionObserver((entries) => {
-    entries.forEach((e) => byVisibility.set(e.target, e.intersectionRatio));
-    let best = null, bestRatio = 0;
-    byVisibility.forEach((ratio, target) => {
-      if (ratio > bestRatio) { bestRatio = ratio; best = target; }
-    });
-    if (best) {
-      const idx = sections.indexOf(best);
+  /* ---- active section tracking (spine glow) ----
+     Direct scroll-position check: the active section is the last one whose
+     top has passed a line ~40% down the viewport. More reactive than ratio-
+     based observation across sections of very different heights. */
+  let activeIdx = -1;
+  const updateActive = () => {
+    const line = window.scrollY + window.innerHeight * 0.4;
+    let idx = 0;
+    for (let i = 0; i < sections.length; i++) {
+      if (sections[i].offsetTop <= line) idx = i;
+    }
+    // near the very bottom, force-select the final section
+    if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 4) {
+      idx = sections.length - 1;
+    }
+    if (idx !== activeIdx) {
+      activeIdx = idx;
       vertButtons.forEach((b, i) => b.classList.toggle('active', i === idx));
     }
-  }, { threshold: [0.1, 0.25, 0.5, 0.75] });
-  sections.forEach((s) => secObserver.observe(s));
+  };
 
   /* ---- draw the animated, anatomical hero spine ---- */
   const column = document.getElementById('spineColumn');
@@ -99,24 +105,20 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Interactive: vertebrae illuminate in sequence as you scroll the page,
-    // plus a gentle sway. The spine "fills up" the further you read.
-    if (!reduceMotion) {
-      const svg = column.closest('.spine-svg');
-      const onSpineScroll = () => {
-        const h = document.documentElement;
-        const prog = h.scrollTop / (h.scrollHeight - h.clientHeight || 1);
-        const lit = Math.round(prog * heroVertebrae.length);
-        heroVertebrae.forEach((v, i) => v.classList.toggle('lit', i < lit));
-        const sway = Math.sin(window.scrollY / 240) * 6;
-        if (svg) svg.style.transform = `rotate(${sway * 0.12}deg)`;
-      };
-      onSpineScroll();
-      window.addEventListener('scroll', onSpineScroll, { passive: true });
-    } else {
-      heroVertebrae.forEach((v) => v.classList.add('lit'));
-    }
+    if (reduceMotion) heroVertebrae.forEach((v) => v.classList.add('lit'));
   }
+
+  // Interactive: hero vertebrae illuminate in sequence as you scroll the page.
+  const heroSvg = column ? column.closest('.spine-svg') : null;
+  const updateHeroSpine = () => {
+    if (!heroVertebrae.length || reduceMotion) return;
+    const h = document.documentElement;
+    const prog = h.scrollTop / (h.scrollHeight - h.clientHeight || 1);
+    const lit = Math.round(prog * heroVertebrae.length);
+    heroVertebrae.forEach((v, i) => v.classList.toggle('lit', i < lit));
+    const sway = Math.sin(window.scrollY / 240) * 6;
+    if (heroSvg) heroSvg.style.transform = `rotate(${sway * 0.12}deg)`;
+  };
 
   /* ---- reveal on scroll ---- */
   const revealEls = document.querySelectorAll('.reveal');
@@ -135,11 +137,22 @@ document.addEventListener('DOMContentLoaded', () => {
     revealEls.forEach((el) => revObserver.observe(el));
   }
 
-  /* ---- sticky header shadow ---- */
+  /* ---- single rAF-throttled scroll loop drives everything ---- */
   const topbar = document.querySelector('.topbar');
-  const onScroll = () => topbar.classList.toggle('scrolled', window.scrollY > 24);
+  let ticking = false;
+  const onScroll = () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      topbar.classList.toggle('scrolled', window.scrollY > 24);
+      updateActive();
+      updateHeroSpine();
+      ticking = false;
+    });
+  };
   onScroll();
   window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', onScroll, { passive: true });
 
   /* ---- mobile menu ---- */
   const hamburger = document.getElementById('hamburger');

@@ -66,7 +66,7 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 500; line-height: 1.08; let
 
 /* ---------- top bar ---------- */
 .topbar {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  position: fixed; top: 0; left: 0; right: 0; z-index: 60;
   display: flex; align-items: center; justify-content: space-between;
   padding: 1.1rem clamp(1.1rem, 4vw, 3rem);
   transition: background .3s ease, box-shadow .3s ease, padding .3s ease;
@@ -104,34 +104,47 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 500; line-height: 1.08; let
 .mobile-menu__call { color: var(--teal) !important; font-family: var(--sans); font-size: 1.1rem; font-weight: 600; border: 1.5px solid var(--teal); border-radius: 999px; padding: .6rem 1.4rem; }
 
 /* ---------- spine nav (left rail) ---------- */
+/* --bone-col is the fixed width of the clickable bone area; the rail and the
+   bones are centered in it, and labels float to the right as chips so they
+   never overlap the rail line. */
 .spine {
-  position: fixed; top: 50%; left: clamp(12px, 2vw, 28px);
+  --bone-col: 30px;
+  position: fixed; top: 50%; left: clamp(12px, 2vw, 26px);
   transform: translateY(-50%); z-index: 40;
 }
 .spine__rail {
-  position: absolute; left: 50%; top: -6px; bottom: -6px; width: 2px;
+  position: absolute; left: calc(var(--bone-col) / 2); top: -10px; bottom: -10px; width: 2px;
   transform: translateX(-50%);
   background: linear-gradient(var(--sage), var(--teal));
-  opacity: .35;
+  opacity: .3; pointer-events: none;
 }
-.spine__list { list-style: none; display: flex; flex-direction: column; gap: 18px; position: relative; }
+.spine__list { list-style: none; display: flex; flex-direction: column; gap: 20px; position: relative; }
 .vert {
-  position: relative; display: flex; align-items: center; gap: 12px; cursor: pointer; background: none; border: 0; padding: 0;
+  position: relative; display: flex; align-items: center; cursor: pointer; background: none; border: 0; padding: 0;
 }
 .vert__bone {
-  width: 16px; height: 9px; border-radius: 6px;
-  background: var(--sage); opacity: .5;
-  transition: all .35s cubic-bezier(.22,1,.36,1);
-  box-shadow: 0 0 0 0 rgba(31,77,74,0);
+  width: var(--bone-col); height: 10px; flex: 0 0 var(--bone-col);
+  display: grid; place-items: center;
+}
+/* the actual bone shape is drawn as a pseudo-element so it can grow without
+   shifting the rail alignment */
+.vert__bone::before {
+  content: ""; width: 14px; height: 9px; border-radius: 6px;
+  background: var(--sage); opacity: .55;
+  transition: width .35s cubic-bezier(.22,1,.36,1), background .35s, opacity .35s, box-shadow .35s;
 }
 .vert__label {
+  margin-left: 4px; padding: 2px 9px; border-radius: 999px;
   font-size: 0.72rem; font-weight: 600; letter-spacing: .04em; color: var(--ink-soft);
-  opacity: 0; transform: translateX(-6px);
-  transition: opacity .25s, transform .25s; white-space: nowrap;
+  background: rgba(247,245,239,.92); box-shadow: 0 2px 8px -3px rgba(28,40,38,.25);
+  opacity: 0; transform: translateX(-6px); pointer-events: none;
+  transition: opacity .25s, transform .25s, color .25s; white-space: nowrap;
 }
-.vert:hover .vert__label { opacity: 1; transform: translateX(0); }
-.vert.active .vert__bone {
-  background: var(--teal); opacity: 1; width: 26px;
+.vert:hover .vert__label,
+.vert:focus-visible .vert__label { opacity: 1; transform: translateX(0); }
+.vert:hover .vert__bone::before { opacity: 1; }
+.vert.active .vert__bone::before {
+  width: 22px; background: var(--teal); opacity: 1;
   box-shadow: 0 0 0 4px rgba(31,77,74,.14);
 }
 .vert.active .vert__label { opacity: 1; transform: translateX(0); color: var(--teal); }
@@ -269,7 +282,8 @@ a.contact__item:hover { background: rgba(255,255,255,.1); transform: translateY(
   .spine { display: none; }
   .topnav { display: none; }
   .hamburger { display: flex; }
-  .hero { grid-template-columns: 1fr; min-height: auto; padding-top: 7rem; text-align: left; }
+  .hero { grid-template-columns: 1fr; min-height: auto; padding: 7rem clamp(1.2rem, 5vw, 3rem) 4rem; text-align: left; }
+  .hero__lede { max-width: 100%; }
   .hero__spineart { display: none; }
   .about__grid { grid-template-columns: 1fr; }
   .about__portrait { max-width: 340px; }
