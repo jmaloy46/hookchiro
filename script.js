@@ -47,45 +47,74 @@ document.addEventListener('DOMContentLoaded', () => {
   }, { threshold: [0.1, 0.25, 0.5, 0.75] });
   sections.forEach((s) => secObserver.observe(s));
 
-  /* ---- draw the animated hero spine ---- */
+  /* ---- draw the animated, anatomical hero spine ---- */
   const column = document.getElementById('spineColumn');
+  const heroVertebrae = [];
   if (column) {
-    const N = 11;            // vertebrae count
-    const top = 24, gap = 44;
     const svgns = 'http://www.w3.org/2000/svg';
-    for (let i = 0; i < N; i++) {
-      const cy = top + i * gap;
-      // widen toward the bottom (lumbar) for an anatomical taper
-      const w = 26 + i * 2.6;
-      const x = 60 - w / 2;
-      const rect = document.createElementNS(svgns, 'rect');
-      rect.setAttribute('x', x);
-      rect.setAttribute('y', cy);
-      rect.setAttribute('width', w);
-      rect.setAttribute('height', 26);
-      rect.setAttribute('rx', 10);
-      rect.setAttribute('class', 'vertebra-art');
-      rect.style.animationDelay = `${reduceMotion ? 0 : i * 0.08}s`;
-      column.appendChild(rect);
+    const N = 12;                 // vertebrae count
+    const top = 30, gap = 40, cx = 60;
 
+    const make = (tag, attrs) => {
+      const el = document.createElementNS(svgns, tag);
+      for (const k in attrs) el.setAttribute(k, attrs[k]);
+      return el;
+    };
+
+    for (let i = 0; i < N; i++) {
+      const t = i / (N - 1);
+      const cy = top + i * gap;
+      const bw = 24 + t * 22;     // body widens toward lumbar (bottom)
+      const bh = 20 + t * 6;
+
+      const vert = make('g', { class: 'vertebra-art' });
+      vert.style.animationDelay = `${reduceMotion ? 0 : i * 0.07}s`;
+
+      // transverse processes (the side "wings")
+      const wing = 14 + t * 8;
+      vert.appendChild(make('path', {
+        d: `M ${cx - bw / 2} ${cy} q ${-wing} ${-4}, ${-wing - 4} ${4}`,
+        class: 'vert-process'
+      }));
+      vert.appendChild(make('path', {
+        d: `M ${cx + bw / 2} ${cy} q ${wing} ${-4}, ${wing + 4} ${4}`,
+        class: 'vert-process'
+      }));
+      // vertebral body
+      vert.appendChild(make('rect', {
+        x: cx - bw / 2, y: cy - bh / 2, width: bw, height: bh, rx: 8,
+        class: 'vert-body'
+      }));
+
+      column.appendChild(vert);
+      heroVertebrae.push(vert);
+
+      // intervertebral disc
       if (i < N - 1) {
-        const disc = document.createElementNS(svgns, 'ellipse');
-        disc.setAttribute('cx', 60);
-        disc.setAttribute('cy', cy + 35);
-        disc.setAttribute('rx', (w + (w + 2.6)) / 4.2);
-        disc.setAttribute('ry', 5);
-        disc.setAttribute('class', 'disc-art');
-        disc.style.animationDelay = `${reduceMotion ? 0 : i * 0.08 + 0.04}s`;
+        const disc = make('ellipse', {
+          cx, cy: cy + gap / 2, rx: bw / 2 - 1, ry: 4, class: 'disc-art'
+        });
+        disc.style.animationDelay = `${reduceMotion ? 0 : i * 0.07 + 0.03}s`;
         column.appendChild(disc);
       }
     }
-    // gentle parallax sway on scroll
+
+    // Interactive: vertebrae illuminate in sequence as you scroll the page,
+    // plus a gentle sway. The spine "fills up" the further you read.
     if (!reduceMotion) {
       const svg = column.closest('.spine-svg');
-      window.addEventListener('scroll', () => {
-        const sway = Math.sin(window.scrollY / 220) * 6;
-        if (svg) svg.style.transform = `rotate(${sway * 0.15}deg)`;
-      }, { passive: true });
+      const onSpineScroll = () => {
+        const h = document.documentElement;
+        const prog = h.scrollTop / (h.scrollHeight - h.clientHeight || 1);
+        const lit = Math.round(prog * heroVertebrae.length);
+        heroVertebrae.forEach((v, i) => v.classList.toggle('lit', i < lit));
+        const sway = Math.sin(window.scrollY / 240) * 6;
+        if (svg) svg.style.transform = `rotate(${sway * 0.12}deg)`;
+      };
+      onSpineScroll();
+      window.addEventListener('scroll', onSpineScroll, { passive: true });
+    } else {
+      heroVertebrae.forEach((v) => v.classList.add('lit'));
     }
   }
 

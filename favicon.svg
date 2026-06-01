@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="14" fill="#1f4d4a"/>
+  <!-- stacked vertebrae -->
+  <g fill="none" stroke="#f7f5ef" stroke-width="3.4" stroke-linecap="round">
+    <path d="M22 16 H42"/>
+    <path d="M24 25 H40"/>
+    <path d="M22 34 H42"/>
+    <path d="M24 43 H40"/>
+    <path d="M22 52 H42"/>
+  </g>
+  <circle cx="32" cy="20.5" r="2.2" fill="#c98a5e"/>
+  <circle cx="32" cy="29.5" r="2.2" fill="#c98a5e"/>
+  <circle cx="32" cy="38.5" r="2.2" fill="#c98a5e"/>
+  <circle cx="32" cy="47.5" r="2.2" fill="#c98a5e"/>
+</svg>
